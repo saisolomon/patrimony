@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Target,
@@ -234,12 +236,37 @@ function DashboardPreview() {
 }
 
 export default function OnboardingPage() {
+  const router = useRouter();
+  const { user } = useUser();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   const [netWorth, setNetWorth] = useState("");
   const [institutions, setInstitutions] = useState("");
   const [entities, setEntities] = useState("");
   const [concern, setConcern] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleFinishOnboarding() {
+    setSaving(true);
+    try {
+      await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: selectedGoal,
+          netWorthRange: netWorth,
+          institutionCount: institutions,
+          entityCount: entities,
+          primaryConcern: concern,
+          email: user?.primaryEmailAddress?.emailAddress,
+          name: user?.fullName,
+        }),
+      });
+      router.push("/pricing");
+    } catch {
+      setSaving(false);
+    }
+  }
 
   const canProceedStep1 = selectedGoal !== null;
   const canProceedStep2 =
@@ -451,13 +478,14 @@ export default function OnboardingPage() {
               >
                 Back
               </button>
-              <Link
-                href="/dashboard"
+              <button
+                onClick={handleFinishOnboarding}
+                disabled={saving}
                 className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-gold to-gold-dark text-bg-primary hover:shadow-lg hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-200"
               >
-                Enter Your Dashboard
+                {saving ? "Setting up..." : "Choose Your Plan"}
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
             </div>
           </div>
         )}
