@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { stripe, PLANS, type PlanId } from "@/lib/stripe";
 
 export async function POST(req: NextRequest) {
@@ -7,6 +8,11 @@ export async function POST(req: NextRequest) {
       planId: PlanId;
       billingInterval: "monthly" | "annual";
     };
+
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     if (!stripe) {
       return NextResponse.json(
@@ -43,11 +49,15 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
+      metadata: {
+        clerkUserId: userId,
+      },
       subscription_data: {
         trial_period_days: plan.trialDays,
         metadata: {
           planId,
           billingInterval,
+          clerkUserId: userId,
         },
       },
       allow_promotion_codes: true,
