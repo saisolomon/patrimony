@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { getCurrentUser } from "@/lib/dal";
+import { PLANS, type PlanId } from "@/lib/stripe";
 import { SettingsForm } from "@/components/dashboard/settings-form";
 
 export default async function SettingsPage() {
@@ -11,15 +12,18 @@ export default async function SettingsPage() {
   const profile = {
     fullName: clerkUser
       ? `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim()
-      : dbUser.email || "User",
+      : dbUser.name || "User",
     email: clerkUser?.emailAddresses?.[0]?.emailAddress || dbUser.email || "",
   };
 
-  const subscription = dbUser.subscription
+  const sub = dbUser.subscription;
+  const subscription = sub
     ? {
-        planName: dbUser.subscription.planName,
-        status: dbUser.subscription.status,
-        price: `$${(Number(dbUser.subscription.price) / 100).toLocaleString()}/month`,
+        planName: (PLANS[sub.plan as PlanId]?.name ?? sub.plan) + " Plan",
+        status: sub.status,
+        price: sub.billingInterval === "annual"
+          ? `$${(PLANS[sub.plan as PlanId]?.annualPrice ?? 0) / 100}/year`
+          : `$${(PLANS[sub.plan as PlanId]?.monthlyPrice ?? 0) / 100}/month`,
       }
     : null;
 

@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
               billingInterval,
               status: subscription.status,
               trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
-              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              currentPeriodEnd: subscription.items?.data?.[0]?.current_period_end ? new Date(subscription.items.data[0].current_period_end * 1000) : null,
             },
             create: {
               userId: user.id,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
               billingInterval,
               status: subscription.status,
               trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
-              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              currentPeriodEnd: subscription.items?.data?.[0]?.current_period_end ? new Date(subscription.items.data[0].current_period_end * 1000) : null,
             },
           });
         }
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
           where: { stripeSubscriptionId: subscription.id },
           data: {
             status: subscription.status,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodEnd: subscription.items?.data?.[0]?.current_period_end ? new Date(subscription.items.data[0].current_period_end * 1000) : null,
             trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
           },
         });
