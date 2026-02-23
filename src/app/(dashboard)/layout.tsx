@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import {
   LayoutDashboard,
   Wallet,
@@ -29,6 +30,8 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
   return (
     <div className="flex min-h-screen bg-bg-primary">
@@ -105,15 +108,18 @@ export default function DashboardLayout({
         <div className="border-t border-border p-4">
           <div className="flex items-center gap-3 rounded-xl px-3 py-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 text-sm font-semibold text-gold">
-              AS
+              {user?.firstName?.[0]}{user?.lastName?.[0] || ""}
             </div>
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-medium text-text-primary">
-                Alexander S.
+                {user?.firstName} {user?.lastName?.[0] ? `${user.lastName[0]}.` : ""}
               </p>
-              <p className="truncate text-xs text-gold">Dynasty Plan</p>
+              <p className="truncate text-xs text-gold">Patrimony</p>
             </div>
-            <button className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-danger">
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-danger"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           </div>
