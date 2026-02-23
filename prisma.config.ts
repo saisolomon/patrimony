@@ -7,6 +7,6 @@ export default defineConfig({
     path: path.join(__dirname, "prisma", "migrations"),
   },
   datasource: {
-    url: process.env["POSTGRES_PRISMA_URL"],
+    url: process.env["PRISMA_DATABASE_URL"],
   },
 });

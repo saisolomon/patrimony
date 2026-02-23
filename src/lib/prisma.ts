@@ -6,7 +6,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createClient(): PrismaClient {
-  const connectionString = process.env.POSTGRES_PRISMA_URL;
+  const connectionString = process.env.PRISMA_DATABASE_URL;
   if (!connectionString) {
     // Return a client that will fail at query time with a clear error
     // This prevents build-time crashes when env vars aren't set
