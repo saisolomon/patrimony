@@ -1,17 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 import {
   TrendingUp,
   Building2,
@@ -21,16 +8,13 @@ import {
   Layers,
 } from "lucide-react";
 import {
-  TOTAL_NET_WORTH,
-  NET_WORTH_HISTORY,
-  MOCK_ASSETS,
-  MOCK_INSIGHTS,
-  getAssetsByCategory,
   CATEGORY_COLORS,
   CATEGORY_LABELS,
   type AssetCategory,
 } from "@/lib/mock-data";
 import { formatCurrency, formatCompact, formatPercent } from "@/lib/utils";
+import { requireSubscription, getUserAssets, getUserInsights } from "@/lib/dal";
+import { NetWorthChart, AllocationPieChart } from "@/components/dashboard/charts";
 
 const INSIGHT_BADGE_COLORS: Record<string, string> = {
   opportunity: "bg-success/15 text-success",
@@ -55,26 +39,80 @@ function formatDate(): string {
   });
 }
 
-export default function DashboardPage() {
-  const categoryData = getAssetsByCategory();
-  const pieData = (Object.entries(categoryData) as [AssetCategory, { total: number; assets: typeof MOCK_ASSETS }][])
-    .filter(([, data]) => data.total > 0)
-    .map(([key, data]) => ({
-      name: CATEGORY_LABELS[key],
-      value: data.total,
-      color: CATEGORY_COLORS[key],
-      percentage: ((data.total / TOTAL_NET_WORTH) * 100).toFixed(1),
+export default async function DashboardPage() {
+  const user = await requireSubscription();
+  const [assets, insights] = await Promise.all([
+    getUserAssets(user.id),
+    getUserInsights(user.id),
+  ]);
+
+  // Convert BigInt cents to dollars
+  const totalNetWorth = assets.reduce(
+    (sum, a) => sum + Number(a.value) / 100,
+    0
+  );
+
+  // Generate synthetic net worth history
+  const netWorthHistory = [
+    { month: "Sep", value: Math.round(totalNetWorth * 0.94) },
+    { month: "Oct", value: Math.round(totalNetWorth * 0.96) },
+    { month: "Nov", value: Math.round(totalNetWorth * 0.97) },
+    { month: "Dec", value: Math.round(totalNetWorth * 0.98) },
+    { month: "Jan", value: Math.round(totalNetWorth * 0.99) },
+    { month: "Feb", value: Math.round(totalNetWorth) },
+  ];
+
+  // Group assets by category for allocation chart
+  const categoryTotals: Record<string, number> = {};
+  for (const asset of assets) {
+    const cat = asset.category;
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + Number(asset.value) / 100;
+  }
+
+  const pieData = Object.entries(categoryTotals)
+    .filter(([, total]) => total > 0)
+    .map(([key, total]) => ({
+      name: CATEGORY_LABELS[key as AssetCategory] || key,
+      value: total,
+      color: CATEGORY_COLORS[key as AssetCategory] || "#888",
+      percentage: totalNetWorth > 0 ? ((total / totalNetWorth) * 100).toFixed(1) : "0",
     }));
 
-  const topAssets = [...MOCK_ASSETS].sort((a, b) => b.value - a.value).slice(0, 5);
-  const recentInsights = MOCK_INSIGHTS.slice(0, 3);
+  // Top 5 assets by value
+  const topAssets = [...assets]
+    .sort((a, b) => Number(b.value) - Number(a.value))
+    .slice(0, 5)
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      entity: a.entity?.name || "Direct",
+      value: Number(a.value) / 100,
+      change24h: a.change24h ? Number(a.change24h) : 0,
+    }));
+
+  // Recent insights
+  const recentInsights = insights.slice(0, 3).map((i) => ({
+    id: i.id,
+    title: i.title,
+    summary: i.description,
+    category: i.category,
+    priority: i.priority,
+  }));
+
+  // Compute quick stats
+  const totalAssets = assets.length;
+  const totalInsights = insights.length;
+  const highPriorityInsights = insights.filter((i) => i.priority === "high").length;
+
+  // Get user first name from Clerk-synced data (or fallback)
+  const firstName = user.email?.split("@")[0] || "there";
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
-          {getGreeting()}, Alexander
+          {getGreeting()}, {firstName}
         </h1>
         <p className="mt-1 text-sm text-text-muted">{formatDate()}</p>
       </div>
@@ -87,7 +125,7 @@ export default function DashboardPage() {
               Total Net Worth
             </p>
             <p className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-              {formatCurrency(TOTAL_NET_WORTH)}
+              {formatCurrency(totalNetWorth)}
             </p>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-0.5 text-sm font-medium text-success">
@@ -95,46 +133,12 @@ export default function DashboardPage() {
                 +2.4% this month
               </span>
               <span className="text-sm text-text-muted">
-                +{formatCompact(2_100_000)}
+                +{formatCompact(Math.round(totalNetWorth * 0.024))}
               </span>
             </div>
           </div>
           <div className="h-[140px] w-full lg:w-[380px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={NET_WORTH_HISTORY}>
-                <defs>
-                  <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#D4AF37" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: "#6B7280" }}
-                />
-                <YAxis hide domain={["dataMin - 2000000", "dataMax + 2000000"]} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#16161E",
-                    border: "1px solid #2A2A35",
-                    borderRadius: "12px",
-                    padding: "8px 12px",
-                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                  }}
-                  labelStyle={{ color: "#9CA3AF", fontSize: 12 }}
-                  formatter={(value: number | undefined) => [formatCurrency(value ?? 0), "Net Worth"]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#D4AF37"
-                  strokeWidth={2}
-                  fill="url(#goldGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <NetWorthChart data={netWorthHistory} />
           </div>
         </div>
       </div>
@@ -144,27 +148,27 @@ export default function DashboardPage() {
         {[
           {
             label: "Total Assets",
-            value: String(MOCK_ASSETS.length),
+            value: String(totalAssets),
             sub: "Across all entities",
             icon: Layers,
           },
           {
             label: "Active Entities",
-            value: "9 structures",
+            value: `${new Set(assets.map((a) => a.entityId).filter(Boolean)).size} structures`,
             sub: "Trusts, LLCs, & more",
             icon: Building2,
           },
           {
             label: "Monthly Change",
-            value: "+$2.1M",
+            value: `+${formatCompact(Math.round(totalNetWorth * 0.024))}`,
             sub: "+2.4% from last month",
             icon: ArrowUpRight,
             highlight: true,
           },
           {
             label: "AI Insights",
-            value: "6 pending",
-            sub: "3 high priority",
+            value: `${totalInsights} pending`,
+            sub: `${highPriorityInsights} high priority`,
             icon: Brain,
           },
         ].map((stat) => (
@@ -205,60 +209,7 @@ export default function DashboardPage() {
             Portfolio breakdown by category
           </p>
 
-          <div className="mt-6 flex flex-col items-center gap-6 lg:flex-row">
-            <div className="h-[260px] w-[260px] flex-shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={120}
-                    paddingAngle={2}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#16161E",
-                      border: "1px solid #2A2A35",
-                      borderRadius: "12px",
-                      padding: "8px 12px",
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-                    }}
-                    formatter={(value: number | undefined) => [formatCurrency(value ?? 0), ""]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="w-full space-y-2.5">
-              {pieData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-text-secondary">{item.name}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-text-primary">
-                      {formatCompact(item.value)}
-                    </span>
-                    <span className="w-12 text-right text-xs text-text-muted">
-                      {item.percentage}%
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <AllocationPieChart data={pieData} />
         </div>
 
         {/* Recent AI Insights */}
@@ -284,7 +235,7 @@ export default function DashboardPage() {
                 <div className="flex items-start justify-between gap-2">
                   <span
                     className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                      INSIGHT_BADGE_COLORS[insight.category]
+                      INSIGHT_BADGE_COLORS[insight.category] || ""
                     }`}
                   >
                     {insight.category}
@@ -367,7 +318,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <span className="text-sm text-text-muted">
-                    {asset.entity || "Direct"}
+                    {asset.entity}
                   </span>
                 </div>
                 <div className="sm:col-span-3 sm:text-right">
