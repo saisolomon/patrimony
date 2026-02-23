@@ -47,7 +47,13 @@ export default function Home() {
               FAQ
             </a>
             <Link
-              href="/onboarding"
+              href="/sign-in"
+              className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/sign-up"
               className="rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-bg-primary transition-colors hover:bg-gold-light"
             >
               Start Free Trial
@@ -87,7 +93,7 @@ export default function Home() {
           {/* CTAs */}
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/onboarding"
+              href="/sign-up"
               className="group flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-semibold text-bg-primary transition-all hover:bg-gold-light hover:shadow-lg hover:shadow-gold/20"
             >
               Start Your 14-Day Trial
@@ -356,7 +362,7 @@ export default function Home() {
                 That&apos;s over 96% less than building this yourself.
               </p>
               <Link
-                href="/onboarding"
+                href="/sign-up"
                 className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 font-semibold text-bg-primary transition-all hover:bg-gold-light hover:shadow-lg hover:shadow-gold/20"
               >
                 Start Your 14-Day Trial
@@ -415,7 +421,7 @@ export default function Home() {
                 ))}
               </ul>
               <Link
-                href="/onboarding"
+                href="/sign-up"
                 className="mt-8 block rounded-xl border border-border py-3.5 text-center font-semibold text-text-primary transition-colors hover:border-border-light hover:bg-bg-card-hover"
               >
                 Start Free Trial
@@ -459,7 +465,7 @@ export default function Home() {
                 ))}
               </ul>
               <Link
-                href="/onboarding"
+                href="/sign-up"
                 className="mt-8 block rounded-xl bg-gold py-3.5 text-center font-semibold text-bg-primary transition-colors hover:bg-gold-light"
               >
                 Start Free Trial
@@ -500,7 +506,7 @@ export default function Home() {
                 ))}
               </ul>
               <Link
-                href="/onboarding"
+                href="/sign-up"
                 className="mt-8 block rounded-xl border border-border py-3.5 text-center font-semibold text-text-primary transition-colors hover:border-border-light hover:bg-bg-card-hover"
               >
                 Start Free Trial
@@ -570,7 +576,7 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
-                href="/onboarding"
+                href="/sign-up"
                 className="group flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-semibold text-bg-primary transition-all hover:bg-gold-light hover:shadow-lg hover:shadow-gold/20"
               >
                 Start Your 14-Day Trial

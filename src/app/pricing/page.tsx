@@ -32,7 +32,7 @@ const plans = [
       "1 GB document vault",
     ],
     cta: "Start 14-Day Trial",
-    ctaLink: "/onboarding",
+    ctaLink: "/sign-up",
     highlighted: false,
   },
   {
@@ -53,7 +53,7 @@ const plans = [
       "10 GB document vault",
     ],
     cta: "Start 14-Day Trial",
-    ctaLink: "/onboarding",
+    ctaLink: "/sign-up",
     highlighted: true,
     badge: "Most Popular",
   },
@@ -554,7 +554,7 @@ export default function PricingPage() {
             Join the families who have already gained complete visibility over their wealth.
           </p>
           <Link
-            href="/onboarding"
+            href="/sign-up"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-gold to-gold-dark text-bg-primary hover:shadow-lg hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-200"
           >
             Start Your 14-Day Trial
