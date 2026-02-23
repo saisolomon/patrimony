@@ -60,10 +60,10 @@ function SuccessContent() {
         </div>
 
         <Link
-          href="/onboarding"
+          href="/dashboard"
           className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-gold to-gold-dark text-bg-primary hover:shadow-lg hover:shadow-gold/20 hover:scale-[1.02] transition-all duration-200"
         >
-          Start Onboarding
+          Go to Dashboard
           <ArrowRight className="w-4 h-4" />
         </Link>
 
