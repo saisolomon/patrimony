@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -28,56 +29,89 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log("Checkout completed:", {
-          customerId: session.customer,
-          subscriptionId: session.subscription,
-          email: session.customer_details?.email,
-          metadata: session.metadata,
+        const clerkUserId = session.metadata?.clerkUserId;
+        if (!clerkUserId) {
+          console.error("No clerkUserId in checkout session metadata");
+          break;
+        }
+
+        // Link Stripe customer to user
+        await prisma.user.update({
+          where: { clerkUserId },
+          data: { stripeCustomerId: session.customer as string },
         });
-        // TODO: Create user in your database
-        // TODO: Store stripe_customer_id and subscription_id
-        // TODO: Set subscription_status = 'trialing' or 'active'
+
+        // Fetch subscription details from Stripe
+        const subscriptionId = session.subscription as string;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const planId = subscription.metadata?.planId ?? "steward";
+        const billingInterval = subscription.metadata?.billingInterval ?? "monthly";
+
+        // Create subscription record
+        const user = await prisma.user.findUnique({ where: { clerkUserId } });
+        if (user) {
+          await prisma.subscription.upsert({
+            where: { userId: user.id },
+            update: {
+              stripeSubscriptionId: subscriptionId,
+              plan: planId,
+              billingInterval,
+              status: subscription.status,
+              trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            },
+            create: {
+              userId: user.id,
+              stripeSubscriptionId: subscriptionId,
+              plan: planId,
+              billingInterval,
+              status: subscription.status,
+              trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            },
+          });
+        }
         break;
       }
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log("Subscription updated:", {
-          id: subscription.id,
-          status: subscription.status,
+        await prisma.subscription.updateMany({
+          where: { stripeSubscriptionId: subscription.id },
+          data: {
+            status: subscription.status,
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            trialEnd: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+          },
         });
-        // TODO: Update subscription status in database
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log("Subscription canceled:", {
-          id: subscription.id,
-          status: subscription.status,
+        await prisma.subscription.updateMany({
+          where: { stripeSubscriptionId: subscription.id },
+          data: { status: "canceled" },
         });
-        // TODO: Set subscription_status = 'canceled' in database
         break;
       }
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object;
-        console.log("Payment succeeded:", {
-          id: invoice.id,
-          customerId: invoice.customer,
-        });
-        // TODO: Record payment, extend access
+        console.log("Payment succeeded:", invoice.id);
         break;
       }
 
       case "invoice.payment_failed": {
         const invoice = event.data.object;
-        console.log("Payment failed:", {
-          id: invoice.id,
-          customerId: invoice.customer,
-        });
-        // TODO: Set subscription_status = 'past_due'
-        // TODO: Send dunning email
+        const customerId = invoice.customer as string;
+        const user = await prisma.user.findUnique({ where: { stripeCustomerId: customerId } });
+        if (user) {
+          await prisma.subscription.updateMany({
+            where: { userId: user.id },
+            data: { status: "past_due" },
+          });
+        }
         break;
       }
 
