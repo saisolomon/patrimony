@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
       },
       allow_promotion_codes: true,
       billing_address_collection: "required",
-      customer_creation: "always",
       success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/checkout/canceled`,
     });
