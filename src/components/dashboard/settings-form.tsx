@@ -35,6 +35,12 @@ function Toggle({
   );
 }
 
+interface NotificationPrefs {
+  weeklyDigest: boolean;
+  insightAlerts: boolean;
+  taxAlerts: boolean;
+}
+
 interface SettingsFormProps {
   profile: {
     fullName: string;
@@ -45,13 +51,29 @@ interface SettingsFormProps {
     status: string;
     price: string;
   } | null;
+  notifications: NotificationPrefs;
 }
 
-export function SettingsForm({ profile, subscription }: SettingsFormProps) {
-  const [emailDigest, setEmailDigest] = useState(true);
-  const [aiAlerts, setAiAlerts] = useState(true);
-  const [taxAlerts, setTaxAlerts] = useState(true);
+export function SettingsForm({ profile, subscription, notifications }: SettingsFormProps) {
+  const [emailDigest, setEmailDigest] = useState(notifications.weeklyDigest);
+  const [aiAlerts, setAiAlerts] = useState(notifications.insightAlerts);
+  const [taxAlerts, setTaxAlerts] = useState(notifications.taxAlerts);
   const [billingLoading, setBillingLoading] = useState(false);
+
+  async function updateNotification(field: keyof NotificationPrefs, value: boolean) {
+    try {
+      await fetch("/api/settings/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+    } catch {
+      // Revert on error
+      if (field === "weeklyDigest") setEmailDigest(!value);
+      if (field === "insightAlerts") setAiAlerts(!value);
+      if (field === "taxAlerts") setTaxAlerts(!value);
+    }
+  }
 
   async function handleManageBilling() {
     setBillingLoading(true);
@@ -191,7 +213,7 @@ export function SettingsForm({ profile, subscription }: SettingsFormProps) {
                   Portfolio summary and performance report every Monday
                 </p>
               </div>
-              <Toggle enabled={emailDigest} onChange={setEmailDigest} />
+              <Toggle enabled={emailDigest} onChange={(val) => { setEmailDigest(val); updateNotification("weeklyDigest", val); }} />
             </div>
 
             <div className="border-t border-border" />
@@ -205,7 +227,7 @@ export function SettingsForm({ profile, subscription }: SettingsFormProps) {
                   Instant notifications for new high-priority insights
                 </p>
               </div>
-              <Toggle enabled={aiAlerts} onChange={setAiAlerts} />
+              <Toggle enabled={aiAlerts} onChange={(val) => { setAiAlerts(val); updateNotification("insightAlerts", val); }} />
             </div>
 
             <div className="border-t border-border" />
@@ -220,7 +242,7 @@ export function SettingsForm({ profile, subscription }: SettingsFormProps) {
                   deadlines
                 </p>
               </div>
-              <Toggle enabled={taxAlerts} onChange={setTaxAlerts} />
+              <Toggle enabled={taxAlerts} onChange={(val) => { setTaxAlerts(val); updateNotification("taxAlerts", val); }} />
             </div>
           </div>
         </div>

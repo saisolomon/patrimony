@@ -249,7 +249,7 @@ export default function OnboardingPage() {
   async function handleFinishOnboarding() {
     setSaving(true);
     try {
-      await fetch("/api/onboarding", {
+      const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -262,6 +262,9 @@ export default function OnboardingPage() {
           name: user?.fullName,
         }),
       });
+      if (!res.ok) {
+        throw new Error("Failed to save onboarding data");
+      }
       router.push("/pricing");
     } catch {
       setSaving(false);

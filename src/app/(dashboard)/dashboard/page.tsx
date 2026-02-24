@@ -104,8 +104,13 @@ export default async function DashboardPage() {
   const totalInsights = insights.length;
   const highPriorityInsights = insights.filter((i) => i.priority === "high").length;
 
+  // Compute monthly change from synthetic history
+  const previousMonth = netWorthHistory[netWorthHistory.length - 2].value;
+  const monthlyChangePct = previousMonth > 0 ? ((totalNetWorth - previousMonth) / previousMonth) * 100 : 0;
+  const monthlyChangeDollar = totalNetWorth - previousMonth;
+
   // Get user first name from Clerk-synced data (or fallback)
-  const firstName = user.email?.split("@")[0] || "there";
+  const firstName = user.name?.split(" ")[0] || user.email?.split("@")[0] || "there";
 
   return (
     <div className="space-y-8">
@@ -128,12 +133,12 @@ export default async function DashboardPage() {
               {formatCurrency(totalNetWorth)}
             </p>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-0.5 text-sm font-medium text-success">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-medium ${monthlyChangePct >= 0 ? "bg-success/15 text-success" : "bg-danger/15 text-danger"}`}>
                 <TrendingUp className="h-3.5 w-3.5" />
-                +2.4% this month
+                {formatPercent(monthlyChangePct)} this month
               </span>
               <span className="text-sm text-text-muted">
-                +{formatCompact(Math.round(totalNetWorth * 0.024))}
+                {monthlyChangeDollar >= 0 ? "+" : "-"}{formatCompact(Math.abs(monthlyChangeDollar))}
               </span>
             </div>
           </div>
@@ -160,8 +165,8 @@ export default async function DashboardPage() {
           },
           {
             label: "Monthly Change",
-            value: `+${formatCompact(Math.round(totalNetWorth * 0.024))}`,
-            sub: "+2.4% from last month",
+            value: `${monthlyChangeDollar >= 0 ? "+" : "-"}${formatCompact(Math.abs(monthlyChangeDollar))}`,
+            sub: `${formatPercent(monthlyChangePct)} from last month`,
             icon: ArrowUpRight,
             highlight: true,
           },

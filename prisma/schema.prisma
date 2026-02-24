@@ -18,6 +18,9 @@ model User {
   institutionCount String?   @map("institution_count")
   entityCount      String?   @map("entity_count")
   primaryConcern   String?   @map("primary_concern")
+  weeklyDigest     Boolean   @default(true) @map("weekly_digest")
+  insightAlerts    Boolean   @default(true) @map("insight_alerts")
+  taxAlerts        Boolean   @default(true) @map("tax_alerts")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 

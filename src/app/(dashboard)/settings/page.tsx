@@ -27,9 +27,15 @@ export default async function SettingsPage() {
       }
     : null;
 
+  const notifications = {
+    weeklyDigest: dbUser.weeklyDigest,
+    insightAlerts: dbUser.insightAlerts,
+    taxAlerts: dbUser.taxAlerts,
+  };
+
   return (
     <div className="space-y-8">
-      <SettingsForm profile={profile} subscription={subscription} />
+      <SettingsForm profile={profile} subscription={subscription} notifications={notifications} />
     </div>
   );
 }

@@ -43,9 +43,9 @@ function SuccessContent() {
           </div>
           <ul className="space-y-3">
             {[
-              "Complete your 3-step onboarding",
+              "Explore your personalized dashboard",
+              "Review your AI-powered insights",
               "Connect your financial accounts",
-              "See your entire empire in one view",
             ].map((step, i) => (
               <li key={i} className="flex items-center gap-3">
                 <span className="w-6 h-6 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
