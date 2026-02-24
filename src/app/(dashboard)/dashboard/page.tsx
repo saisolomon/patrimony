@@ -6,6 +6,9 @@ import {
   Brain,
   ChevronRight,
   Layers,
+  Link2,
+  Plus,
+  Sparkles,
 } from "lucide-react";
 import {
   CATEGORY_COLORS,
@@ -112,15 +115,67 @@ export default async function DashboardPage() {
   // Get user first name from Clerk-synced data (or fallback)
   const firstName = user.name?.split(" ")[0] || user.email?.split("@")[0] || "there";
 
+  // Count real vs demo assets
+  const realAssets = assets.filter((a) => a.source !== "seed");
+  const connectedAssets = assets.filter((a) => a.source === "plaid");
+  const hasRealData = realAssets.length > 0;
+
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
-          {getGreeting()}, {firstName}
-        </h1>
-        <p className="mt-1 text-sm text-text-muted">{formatDate()}</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
+            {getGreeting()}, {firstName}
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">{formatDate()}</p>
+        </div>
+        {connectedAssets.length > 0 && (
+          <div className="inline-flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-3 py-1.5">
+            <Link2 className="h-3.5 w-3.5 text-success" />
+            <span className="text-xs font-medium text-success">
+              {connectedAssets.length} connected account{connectedAssets.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
       </div>
+
+      {/* Setup Wizard — show when no real assets */}
+      {!hasRealData && (
+        <div className="rounded-2xl border border-gold/30 bg-gradient-to-r from-gold/5 to-transparent p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/15">
+                <Sparkles className="h-5 w-5 text-gold" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-text-primary">
+                  Get started with real data
+                </h2>
+                <p className="mt-0.5 text-sm text-text-muted">
+                  Connect an account or add assets manually to see personalized insights
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                href="/assets"
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text-secondary hover:bg-bg-card-hover hover:text-text-primary"
+              >
+                <Plus className="h-4 w-4" />
+                Add Assets
+              </Link>
+              <Link
+                href="/assets"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-sm font-semibold text-bg-primary hover:shadow-lg hover:shadow-gold/20"
+              >
+                <Link2 className="h-4 w-4" />
+                Connect Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Net Worth Hero Card */}
       <div className="rounded-2xl border border-border bg-bg-card p-6 sm:p-8">

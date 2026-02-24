@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Brain,
   AlertTriangle,
@@ -10,6 +11,8 @@ import {
   ArrowRight,
   CircleDot,
   Filter,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 
 type InsightCategory = "all" | "opportunity" | "risk" | "tax" | "rebalance";
@@ -75,10 +78,13 @@ export interface SerializedInsight {
 
 interface InsightListProps {
   insights: SerializedInsight[];
+  lastGenerated?: string | null;
 }
 
-export function InsightList({ insights }: InsightListProps) {
+export function InsightList({ insights, lastGenerated }: InsightListProps) {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<InsightCategory>("all");
+  const [generating, setGenerating] = useState(false);
 
   const filteredInsights = useMemo(() => {
     if (activeFilter === "all") return insights;
@@ -97,6 +103,20 @@ export function InsightList({ insights }: InsightListProps) {
     (i) => i.priority === "high"
   ).length;
 
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/insights/generate", { method: "POST" });
+      if (res.ok) {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to generate insights:", error);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <>
       {/* Header */}
@@ -113,10 +133,38 @@ export function InsightList({ insights }: InsightListProps) {
               <p className="mt-0.5 text-sm text-text-muted">
                 {insights.length} insights generated &middot;{" "}
                 {highPriorityCount} high priority
+                {lastGenerated && (
+                  <>
+                    {" "}&middot; Last updated{" "}
+                    {new Date(lastGenerated).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </>
+                )}
               </p>
             </div>
           </div>
         </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating}
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold-dark px-4 py-2.5 text-sm font-semibold text-bg-primary hover:shadow-lg hover:shadow-gold/20 disabled:opacity-50"
+        >
+          {generating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Analyzing Portfolio...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Generate Insights
+            </>
+          )}
+        </button>
       </div>
 
       {/* Summary Cards */}
@@ -177,6 +225,20 @@ export function InsightList({ insights }: InsightListProps) {
 
       {/* Insight Cards */}
       <div className="space-y-4">
+        {generating && (
+          <div className="flex items-center gap-3 rounded-2xl border border-gold/30 bg-gold/5 p-6">
+            <Loader2 className="h-5 w-5 animate-spin text-gold" />
+            <div>
+              <p className="text-sm font-medium text-text-primary">
+                Analyzing your portfolio...
+              </p>
+              <p className="text-xs text-text-muted">
+                AI is reviewing your assets, allocation, and market conditions
+              </p>
+            </div>
+          </div>
+        )}
+
         {filteredInsights.map((insight) => {
           const catConfig = CATEGORY_CONFIG[insight.category];
           const prioConfig = PRIORITY_CONFIG[insight.priority] || PRIORITY_CONFIG.low;
@@ -240,7 +302,7 @@ export function InsightList({ insights }: InsightListProps) {
           );
         })}
 
-        {filteredInsights.length === 0 && (
+        {filteredInsights.length === 0 && !generating && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-bg-card py-16">
             <CircleDot className="h-8 w-8 text-text-muted" />
             <p className="mt-3 text-sm text-text-muted">

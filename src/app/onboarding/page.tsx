@@ -466,7 +466,7 @@ export default function OnboardingPage() {
                 Welcome to Your Wealth Command Center
               </h1>
               <p className="text-text-secondary text-base sm:text-lg">
-                Your personalized dashboard has been configured
+                Your personalized dashboard has been configured. After subscribing, you can connect your financial accounts for real-time data.
               </p>
             </div>
 

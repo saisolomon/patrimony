@@ -49,3 +49,73 @@ export async function getUserInsights(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function createAsset(
+  userId: string,
+  data: {
+    name: string;
+    category: string;
+    value: number;
+    entityId?: string;
+    notes?: string;
+    institution?: string;
+  }
+) {
+  return prisma.asset.create({
+    data: {
+      userId,
+      name: data.name,
+      category: data.category,
+      value: BigInt(Math.round(data.value * 100)),
+      entityId: data.entityId || undefined,
+      notes: data.notes || undefined,
+      institution: data.institution || undefined,
+      source: "manual",
+    },
+  });
+}
+
+export async function updateAsset(
+  assetId: string,
+  userId: string,
+  data: {
+    name?: string;
+    category?: string;
+    value?: number;
+    entityId?: string | null;
+    notes?: string | null;
+    institution?: string | null;
+  }
+) {
+  return prisma.asset.update({
+    where: { id: assetId, userId },
+    data: {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.category !== undefined && { category: data.category }),
+      ...(data.value !== undefined && { value: BigInt(Math.round(data.value * 100)) }),
+      ...(data.entityId !== undefined && { entityId: data.entityId }),
+      ...(data.notes !== undefined && { notes: data.notes }),
+      ...(data.institution !== undefined && { institution: data.institution }),
+    },
+  });
+}
+
+export async function deleteAsset(assetId: string, userId: string) {
+  return prisma.asset.delete({
+    where: { id: assetId, userId },
+  });
+}
+
+export async function clearSeedData(userId: string) {
+  await prisma.insight.deleteMany({ where: { userId } });
+  await prisma.asset.deleteMany({ where: { userId, source: "seed" } });
+  await prisma.entity.deleteMany({ where: { userId } });
+}
+
+export async function getUserDocuments(userId: string) {
+  return prisma.document.findMany({
+    where: { userId },
+    include: { entity: true },
+    orderBy: { createdAt: "desc" },
+  });
+}

@@ -28,6 +28,8 @@ model User {
   entities     Entity[]
   assets       Asset[]
   insights     Insight[]
+  plaidItems   PlaidItem[]
+  documents    Document[]
 
   @@map("users")
 }
@@ -59,31 +61,36 @@ model Entity {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent   Entity?  @relation("EntityHierarchy", fields: [parentId], references: [id])
-  children Entity[] @relation("EntityHierarchy")
-  assets   Asset[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Entity?    @relation("EntityHierarchy", fields: [parentId], references: [id])
+  children  Entity[]   @relation("EntityHierarchy")
+  assets    Asset[]
+  documents Document[]
 
   @@map("entities")
 }
 
 model Asset {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  entityId    String?  @map("entity_id")
-  name        String
-  category    String
-  value       BigInt
-  currency    String   @default("USD")
-  change24h   Decimal? @map("change_24h")
-  change30d   Decimal? @map("change_30d")
-  institution String?
-  accountMask String?  @map("account_mask")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  entityId       String?  @map("entity_id")
+  name           String
+  category       String
+  value          BigInt
+  currency       String   @default("USD")
+  change24h      Decimal? @map("change_24h")
+  change30d      Decimal? @map("change_30d")
+  institution    String?
+  accountMask    String?  @map("account_mask")
+  source         String   @default("manual")
+  notes          String?
+  plaidAccountId String?  @map("plaid_account_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entity Entity? @relation(fields: [entityId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity       Entity?       @relation(fields: [entityId], references: [id])
+  plaidAccount PlaidAccount? @relation(fields: [plaidAccountId], references: [id])
 
   @@map("assets")
 }
@@ -96,9 +103,73 @@ model Insight {
   category    String
   priority    String
   isRead      Boolean  @default(false) @map("is_read")
+  actionable  Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("insights")
+}
+
+model PlaidItem {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  itemId          String    @unique @map("item_id")
+  institutionId   String?   @map("institution_id")
+  institutionName String?   @map("institution_name")
+  accessTokenEnc  String    @map("access_token_enc")
+  accessTokenIv   String    @map("access_token_iv")
+  accessTokenTag  String    @map("access_token_tag")
+  cursor          String?
+  lastSyncedAt    DateTime? @map("last_synced_at")
+  status          String    @default("active")
+  errorCode       String?   @map("error_code")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accounts PlaidAccount[]
+
+  @@map("plaid_items")
+}
+
+model PlaidAccount {
+  id               String    @id @default(uuid())
+  plaidItemId      String    @map("plaid_item_id")
+  plaidAccountId   String    @unique @map("plaid_account_id")
+  name             String
+  officialName     String?   @map("official_name")
+  type             String
+  subtype          String?
+  mask             String?
+  currentBalance   BigInt?   @map("current_balance")
+  availableBalance BigInt?   @map("available_balance")
+  isoCurrencyCode  String?   @default("USD") @map("iso_currency_code")
+  lastSyncedAt     DateTime? @map("last_synced_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  plaidItem PlaidItem @relation(fields: [plaidItemId], references: [id], onDelete: Cascade)
+  assets    Asset[]
+
+  @@map("plaid_accounts")
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  entityId  String?  @map("entity_id")
+  name      String
+  fileName  String   @map("file_name")
+  fileSize  Int      @map("file_size")
+  mimeType  String   @map("mime_type")
+  blobUrl   String   @map("blob_url")
+  category  String   @default("general")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity Entity? @relation(fields: [entityId], references: [id])
+
+  @@map("documents")
 }

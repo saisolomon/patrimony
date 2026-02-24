@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/plaid-sync",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/generate-insights",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}

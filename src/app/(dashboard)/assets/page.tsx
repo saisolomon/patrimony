@@ -1,9 +1,12 @@
-import { requireSubscription, getUserAssets } from "@/lib/dal";
+import { requireSubscription, getUserAssets, getUserEntities } from "@/lib/dal";
 import { AssetList } from "@/components/dashboard/asset-list";
 
 export default async function AssetsPage() {
   const user = await requireSubscription();
-  const assets = await getUserAssets(user.id);
+  const [assets, entities] = await Promise.all([
+    getUserAssets(user.id),
+    getUserEntities(user.id),
+  ]);
 
   const serializedAssets = assets.map((a) => ({
     id: a.id,
@@ -13,13 +16,25 @@ export default async function AssetsPage() {
     change24h: a.change24h ? Number(a.change24h) : 0,
     change30d: a.change30d ? Number(a.change30d) : 0,
     entity: a.entity?.name,
+    entityId: a.entityId,
+    source: a.source,
+    notes: a.notes,
+  }));
+
+  const serializedEntities = entities.map((e) => ({
+    id: e.id,
+    name: e.name,
   }));
 
   const totalNetWorth = serializedAssets.reduce((sum, a) => sum + a.value, 0);
 
   return (
     <div className="space-y-8">
-      <AssetList assets={serializedAssets} totalNetWorth={totalNetWorth} />
+      <AssetList
+        assets={serializedAssets}
+        totalNetWorth={totalNetWorth}
+        entities={serializedEntities}
+      />
     </div>
   );
 }
