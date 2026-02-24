@@ -70,6 +70,7 @@ export async function seedUserData(userId: string) {
         currency: "USD",
         change24h: asset.change24h,
         change30d: asset.change30d,
+        source: "seed",
       },
     });
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   CreditCard,
@@ -10,6 +11,7 @@ import {
   Clock,
   Fingerprint,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 
 function Toggle({
@@ -55,10 +57,13 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({ profile, subscription, notifications }: SettingsFormProps) {
+  const router = useRouter();
   const [emailDigest, setEmailDigest] = useState(notifications.weeklyDigest);
   const [aiAlerts, setAiAlerts] = useState(notifications.insightAlerts);
   const [taxAlerts, setTaxAlerts] = useState(notifications.taxAlerts);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [clearingDemo, setClearingDemo] = useState(false);
+  const [demoCleared, setDemoCleared] = useState(false);
 
   async function updateNotification(field: keyof NotificationPrefs, value: boolean) {
     try {
@@ -72,6 +77,22 @@ export function SettingsForm({ profile, subscription, notifications }: SettingsF
       if (field === "weeklyDigest") setEmailDigest(!value);
       if (field === "insightAlerts") setAiAlerts(!value);
       if (field === "taxAlerts") setTaxAlerts(!value);
+    }
+  }
+
+  async function handleClearDemoData() {
+    if (!confirm("This will remove all demo assets, entities, and insights. Your manually added and connected data will be preserved. Continue?")) return;
+    setClearingDemo(true);
+    try {
+      const res = await fetch("/api/assets/seed", { method: "DELETE" });
+      if (res.ok) {
+        setDemoCleared(true);
+        router.refresh();
+      }
+    } catch {
+      // Silently handle error
+    } finally {
+      setClearingDemo(false);
     }
   }
 
@@ -243,6 +264,44 @@ export function SettingsForm({ profile, subscription, notifications }: SettingsF
                 </p>
               </div>
               <Toggle enabled={taxAlerts} onChange={(val) => { setTaxAlerts(val); updateNotification("taxAlerts", val); }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Data Management Section */}
+        <div className="rounded-2xl border border-border bg-bg-card p-6">
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/15">
+              <Trash2 className="h-4 w-4 text-danger" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-text-primary">
+                Data Management
+              </h2>
+              <p className="text-xs text-text-muted">
+                Manage demo and sample data
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-text-primary">
+                  Clear Demo Data
+                </p>
+                <p className="text-xs text-text-muted">
+                  Remove all sample assets, entities, and insights seeded during onboarding. Your manually added and connected account data will be preserved.
+                </p>
+              </div>
+              <button
+                onClick={handleClearDemoData}
+                disabled={clearingDemo || demoCleared}
+                className="inline-flex items-center gap-2 rounded-xl border border-danger/30 px-4 py-2.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {demoCleared ? "Cleared" : clearingDemo ? "Clearing..." : "Clear Demo Data"}
+              </button>
             </div>
           </div>
         </div>

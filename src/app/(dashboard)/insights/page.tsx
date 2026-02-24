@@ -12,12 +12,16 @@ export default async function InsightsPage() {
     category: i.category,
     priority: i.priority,
     date: i.createdAt.toISOString().split("T")[0],
-    actionable: true,
+    actionable: i.actionable,
   }));
+
+  const lastGenerated = insights.length > 0
+    ? insights[0].createdAt.toISOString()
+    : null;
 
   return (
     <div className="space-y-8">
-      <InsightList insights={serializedInsights} />
+      <InsightList insights={serializedInsights} lastGenerated={lastGenerated} />
     </div>
   );
 }

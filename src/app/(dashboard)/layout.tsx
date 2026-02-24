@@ -9,6 +9,7 @@ import {
   Wallet,
   Building2,
   Brain,
+  FileText,
   Settings,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/assets", label: "Assets", icon: Wallet },
   { href: "/entities", label: "Entities", icon: Building2 },
   { href: "/insights", label: "Insights", icon: Brain },
+  { href: "/documents", label: "Documents", icon: FileText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
